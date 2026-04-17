@@ -70,23 +70,25 @@ export async function POST(request) {
     }
 
     const externalReference = `RG_${machineId}_${Date.now()}`;
+    const idempotencyKey = `pix_${machineId}_${Date.now()}_${crypto.randomUUID()}`;
 
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${account.access_token}`
+        Authorization: `Bearer ${account.access_token}`,
+        "X-Idempotency-Key": idempotencyKey
       },
-     body: JSON.stringify({
-  transaction_amount: amount,
-  description: `Crédito fliperama ${machineId}`,
-  payment_method_id: "pix",
-  external_reference: externalReference,
-  notification_url: `${process.env.APP_BASE_URL}/api/webhook`,
-  payer: {
-    email: "teste@raspgames.com.br"
-  }
-})
+      body: JSON.stringify({
+        transaction_amount: amount,
+        description: `Crédito fliperama ${machineId}`,
+        payment_method_id: "pix",
+        external_reference: externalReference,
+        notification_url: `${process.env.APP_BASE_URL}/api/webhook`,
+        payer: {
+          email: "teste@raspgames.com.br"
+        }
+      })
     });
 
     const mpData = await mpRes.json();
