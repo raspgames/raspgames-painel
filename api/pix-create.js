@@ -77,13 +77,16 @@ export async function POST(request) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${account.access_token}`
       },
-      body: JSON.stringify({
-        transaction_amount: amount,
-        description: `Crédito fliperama ${machineId}`,
-        payment_method_id: "pix",
-        external_reference: externalReference,
-        notification_url: `${process.env.APP_BASE_URL}/api/webhook`
-      })
+     body: JSON.stringify({
+  transaction_amount: amount,
+  description: `Crédito fliperama ${machineId}`,
+  payment_method_id: "pix",
+  external_reference: externalReference,
+  notification_url: `${process.env.APP_BASE_URL}/api/webhook`,
+  payer: {
+    email: "teste@raspgames.com.br"
+  }
+})
     });
 
     const mpData = await mpRes.json();
