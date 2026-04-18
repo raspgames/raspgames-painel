@@ -1,3 +1,16 @@
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
+};
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders
+  });
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -5,7 +18,10 @@ export async function POST(request) {
     const credits = Number(body.credits || 1);
 
     if (!machineId) {
-      return Response.json({ error: "machine_id obrigatório" }, { status: 400 });
+      return Response.json(
+        { error: "machine_id obrigatório" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     const payload = {
@@ -31,21 +47,24 @@ export async function POST(request) {
     if (!res.ok) {
       return Response.json(
         { error: "erro ao criar comando", details: data },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
-    return Response.json({
-      ok: true,
-      command: data?.[0] || null
-    });
+    return Response.json(
+      {
+        ok: true,
+        command: data?.[0] || null
+      },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     return Response.json(
       {
         error: "falha no remote-credit-create",
         message: error instanceof Error ? error.message : String(error)
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
