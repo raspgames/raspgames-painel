@@ -1,8 +1,8 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization"
-};
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
 
 async function getMachine(machineId) {
   const url =
@@ -45,69 +45,58 @@ async function bindMachine(machineId, ownerUserId) {
   return data[0] || null;
 }
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
-}
+export default async function handler(req, res) {
+  setCors(res);
 
-export async function POST(request) {
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
   try {
-    const body = await request.json();
-    const machineId = String(body.machine_id || "").trim();
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
+    const machineId = String(body.machine_id || "").trim().toUpperCase();
     const ownerUserId = String(body.owner_user_id || "").trim();
 
     if (!machineId) {
-      return Response.json(
-        { error: "machine_id obrigatório" },
-        { status: 400, headers: corsHeaders }
-      );
+      return res.status(400).json({ error: "machine_id obrigatório" });
     }
 
     if (!ownerUserId) {
-      return Response.json(
-        { error: "owner_user_id obrigatório" },
-        { status: 400, headers: corsHeaders }
-      );
+      return res.status(400).json({ error: "owner_user_id obrigatório" });
     }
 
     const machine = await getMachine(machineId);
 
     if (!machine) {
-      return Response.json(
-        { error: "máquina não encontrada" },
-        { status: 404, headers: corsHeaders }
-      );
+      return res.status(404).json({ error: "máquina não encontrada" });
     }
 
     if (machine.owner_user_id && machine.owner_user_id !== ownerUserId) {
-      return Response.json(
-        { error: "essa máquina já está vinculada a outro usuário" },
-        { status: 409, headers: corsHeaders }
-      );
+      return res.status(409).json({ error: "essa máquina já está vinculada a outro usuário" });
     }
 
     if (machine.owner_user_id === ownerUserId) {
-      return Response.json(
-        { ok: true, already_linked: true, machine },
-        { headers: corsHeaders }
-      );
+      return res.status(200).json({
+        ok: true,
+        already_linked: true,
+        machine
+      });
     }
 
     const updated = await bindMachine(machineId, ownerUserId);
 
-    return Response.json(
-      { ok: true, machine: updated },
-      { headers: corsHeaders }
-    );
+    return res.status(200).json({
+      ok: true,
+      machine: updated
+    });
   } catch (error) {
-    return Response.json(
-      {
-        error: "falha no bind-machine",
-        message: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500, headers: corsHeaders }
-    );
+    return res.status(500).json({
+      error: "falha no bind-machine",
+      message: error instanceof Error ? error.message : String(error)
+    });
   }
 }
